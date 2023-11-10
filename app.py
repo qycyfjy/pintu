@@ -6,13 +6,13 @@
 # nuitka-project: --output-dir=.\bin
 
 from typing import List
-
 import tkinter as tk
 from tkinter import filedialog
 
-from PIL import Image
-import matplotlib.pyplot as plt
-import numpy as np
+from PIL import Image, ImageTk
+
+PREVIEW_WIDTH = 550
+PREVIEW_HEIGHT = 850
 
 exts = Image.registered_extensions()
 supported_extensions = {
@@ -36,10 +36,39 @@ def combine_images_vertically(images: List[Image.Image]) -> Image.Image:
     return out_image
 
 
+def save_image(image: Image.Image):
+    filename = filedialog.asksaveasfilename(
+        initialfile="out", defaultextension=".png", filetypes=[("PNG", "*.png")]
+    )
+    image.save(filename)
+
+
 def preview(image: Image.Image):
-    fig, ax = plt.subplots()
-    ax.imshow(np.asarray(image))
-    plt.show()
+    window = tk.Tk()
+    w = window.winfo_screenwidth()
+    h = window.winfo_screenheight()
+    x = (w / 2) - (PREVIEW_WIDTH / 2)
+    y = (h / 2) - (PREVIEW_HEIGHT / 2)
+    window.geometry(f"{PREVIEW_WIDTH}x{PREVIEW_HEIGHT+35}+{int(x)}+{int(y-40)}")
+
+    aspect_ratio = image.width / image.height
+    preview_image = None
+    if aspect_ratio >= 1:
+        preview_image = image.resize((PREVIEW_WIDTH, int(PREVIEW_WIDTH / aspect_ratio)))
+    else:
+        preview_image = image.resize(
+            (int(PREVIEW_HEIGHT * aspect_ratio), PREVIEW_HEIGHT)
+        )
+
+    img = ImageTk.PhotoImage(preview_image)
+    img_label = tk.Label(window, image=img, width=PREVIEW_WIDTH, height=PREVIEW_HEIGHT)
+    img_label.pack()
+    save_button = tk.Button(
+        window, text="Save Image", command=lambda: save_image(image)
+    )
+    save_button.pack()
+
+    window.mainloop()
 
 
 def main():
@@ -49,15 +78,7 @@ def main():
     try:
         images = [Image.open(file) for file in files]
         out = combine_images_vertically(images)
-
-        while True:
-            cmd = input("1. Preview\n2. Save\n3. Quit\n1,2,3: ")
-            if cmd == "1":
-                preview(out)
-            elif cmd == "2":
-                out.save("out.png")
-            elif cmd == "3":
-                break
+        preview(out)
     except:
         pass
 
