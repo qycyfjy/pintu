@@ -11,8 +11,10 @@ from tkinter import filedialog
 
 from PIL import Image, ImageTk
 
-PREVIEW_WIDTH = 550
-PREVIEW_HEIGHT = 850
+from image_viewer import CanvasImage
+
+PREVIEW_WIDTH = 600
+PREVIEW_HEIGHT = 800
 
 exts = Image.registered_extensions()
 supported_extensions = {
@@ -50,23 +52,15 @@ def preview(image: Image.Image):
     x = (w / 2) - (PREVIEW_WIDTH / 2)
     y = (h / 2) - (PREVIEW_HEIGHT / 2)
     window.geometry(f"{PREVIEW_WIDTH}x{PREVIEW_HEIGHT+35}+{int(x)}+{int(y-40)}")
+    window.rowconfigure(0, weight=1)
+    window.columnconfigure(0, weight=1)
 
-    aspect_ratio = image.width / image.height
-    preview_image = None
-    if aspect_ratio >= 1:
-        preview_image = image.resize((PREVIEW_WIDTH, int(PREVIEW_WIDTH / aspect_ratio)))
-    else:
-        preview_image = image.resize(
-            (int(PREVIEW_HEIGHT * aspect_ratio), PREVIEW_HEIGHT)
-        )
-
-    img = ImageTk.PhotoImage(preview_image)
-    img_label = tk.Label(window, image=img, width=PREVIEW_WIDTH, height=PREVIEW_HEIGHT)
-    img_label.pack()
+    canvas = CanvasImage(window, image, PREVIEW_WIDTH, PREVIEW_HEIGHT)
+    canvas.grid(row=0, column=0)
     save_button = tk.Button(
         window, text="Save Image", command=lambda: save_image(image)
     )
-    save_button.pack()
+    save_button.grid(row=1, column=0)
 
     window.mainloop()
 
@@ -79,8 +73,8 @@ def main():
         images = [Image.open(file) for file in files]
         out = combine_images_vertically(images)
         preview(out)
-    except:
-        pass
+    except Exception as e:
+        print(e)
 
 
 if __name__ == "__main__":
